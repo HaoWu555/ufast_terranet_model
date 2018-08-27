@@ -7,7 +7,7 @@ ws= sum(w); w= w/ws; % normalize
 
 % weighted mean vehicle pose
 xvmean= 0;
-for i=1:NPARTICLES,
+for i=1:NPARTICLES
     xvmean = xvmean+w(i)*xvp(:,i);               
 end
 

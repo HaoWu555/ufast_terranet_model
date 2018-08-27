@@ -6,12 +6,15 @@ xv= particle.xv;
 xf= particle.xf(:,idf);
 Pf= particle.Pf(:,:,idf);
 dimf = size(xf,1);
+dimz = size(zf,1);
 
 % each feature
 for i=1:length(idf)
     % augmented feature state
-    xf_aug= [xf(:,i) ; zeros(2,1)];
-    Pf_aug= [Pf(:,:,i) zeros(2); zeros(2) R];
+    %xf_aug= [xf(:,i) ; zeros(2,1)];
+    xf_aug= [xf(:,i) ; zeros(1,1)];
+    %Pf_aug= [Pf(:,:,i) zeros(2); zeros(2) R];
+    Pf_aug= [Pf(:,:,i) zeros(2,1); zeros(1,2) R];
     % disassemble the covariance
     P = (n+lambda)*(Pf_aug) + eps*eye(n);
     S = chol(P)';
@@ -24,26 +27,27 @@ for i=1:length(idf)
     end
     
     % transform the sigma points
-    Z = zeros(dimf,2*n+1);
+    Z = zeros(dimz,2*n+1);
     bs=zeros(1,2*n+1); % bearing sign    
     for k=1:(2*n+1)
         d= Kai(1:2,k) - xv(1:2);
         r= sqrt(d(1)^2 + d(2)^2) + Kai(3,k); % range + noise
-        bearing= atan2(d(2),d(1));
-        bs(k)=sign(bearing);    
-        if k>1 % unify the sign
-            if bs(k) ~= bs(k-1);            
-                if bs(k)<0 && -pi < bearing && bearing < -pi/2, 
-                    bearing=bearing+2*pi;
-                    bs(k)=sign(bearing);    
-                elseif bs(k)>0 && pi/2 < bearing && bearing < pi,
-                        bearing=bearing-2*pi;
-                        bs(k)=sign(bearing);    
-                end
-            end
-        end
+        %bearing= atan2(d(2),d(1));
+        %bs(k)=sign(bearing);    
+        %if k>1 % unify the sign
+        %    if bs(k) ~= bs(k-1);            
+        %        if bs(k)<0 && -pi < bearing && bearing < -pi/2, 
+        %            bearing=bearing+2*pi;
+        %            bs(k)=sign(bearing);    
+        %        elseif bs(k)>0 && pi/2 < bearing && bearing < pi,
+        %                bearing=bearing-2*pi;
+        %                bs(k)=sign(bearing);    
+        %        end
+        %    end
+        %end
         % predictive sigma pints
-        Z(:,k)= [r;       bearing - xv(3) + Kai(4,k)]; % bearing + noise  **do not use pi_to_pi here**     
+        %Z(:,k)= [r;       bearing - xv(3) + Kai(4,k)]; % bearing + noise  **do not use pi_to_pi here**     
+        Z(:,k)= [r];
     end  
     
     z_hat = 0; % predictive observation
@@ -76,7 +80,7 @@ for i=1:length(idf)
     % standard KF (slightly faster than Cholesky update, the same accuracy)
 %     z_hat(2)=pi_to_pi(z_hat(2));
     v=zf(:,i) - z_hat;
-    v(2) = pi_to_pi(v(2));
+    %v(2) = pi_to_pi(v(2));
 
     Kt = Sigma / St;    
     xf(:,i) = xf(:,i) + Kt * v;

@@ -1,4 +1,4 @@
-function [zf,idf,zn]= data_associateNN(particle,z,R, gate1, gate2)
+function [zf,idf,zn]= data_associateNN(particle,z,R,gate1,gate2)
 % Simple gated nearest-neighbour data-association. 
 % Approximately 1.6 times faster than data_associate.m under a condition of
 % the same number of feature.
