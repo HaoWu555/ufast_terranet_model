@@ -11,13 +11,15 @@ epath= [];  % estimation path
 % car real position
 load car.mat
 % load the car velocity
-load velocity.mat
-V = velocity.';
+load velocity_abs.mat
+V = velocity;
 % load car estimation position
 load car_es.mat
 % load distance
-load distance.mat
-distance = distance.';
+load D.mat
+D = D;
+load Geering.mat
+G = Geering;
 
 timestep = size(velocity,1);
 
@@ -25,25 +27,22 @@ timestep = size(velocity,1);
 
 % H/W parameter(truck). Keep the values.
 dt= 0.1 ; % [s], time interval between control signals
-%vehicle.L= 2.83; % [m]
-%vehicle.H= 0.76; % [m]
-%vehicle.b= 0.5; % [m]
-%vehicle.a= 3.78; % [m]
-%veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
+vehicle.L= 2.83; % [m]
+vehicle.H= 0.76; % [m]
+vehicle.b= 0.5; % [m]
+vehicle.a= 3.78; % [m]
+veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
 
 % control noises. You can change these values for your application.
-sigmaV= 0.8; % [m/s]
-Qe = [sigmaV^2 0; 0 sigmaV^2];  % velocity v in direction x and y
+sigmaV= 1; % [m/s]
+sigmaG= (1*pi/180); % [rad]
+Qe = [sigmaV^2 0; 0 sigmaG^2];  % velocity v and geer g
 
-% process noises. In this case is vehicle position x andy
-sigmaS= 5; % [m] the discription of covariance of position
-Qs = [sigmaS^2 0; 0 sigmaS^2];
-
-% observation(measurement) noises 
-sigmaR= 1; % [m]
-%sigmaB= (3*pi/180); % [rad]
-Re = [sigmaR^2];
-perceplimit=30; % [m] 
+% observation noises. 
+sigmaS= 1; % [m]              % distance
+%sigmaB= (1*pi/180); % [rad]   % geering
+%Re = [sigmaS^2 0; 0 sigmaB^2];
+Re = [sigmaS^2];  %speed
 
 % resampling criteria
 NPARTICLES= 5; % number of particles(samples, hypotheses) 
@@ -55,8 +54,8 @@ NEFFECTIVE= 0.5*NPARTICLES; % minimum number of effective particles
 %GATE_AUGMENT= 100; % minimum distance for creation of new feature (100)
 
 % parameters related to SUT
-dimv= 2; %(x,y)
-dimQ= 2; %(process noise velocity in x and y direction), number of control value to predict the vehicle position
+dimv= 2; % (x, y)
+dimQ= 2; % (control value dimension: velocity and geering)
 dimf= 2; % feature state
 dimz= 1; % number of measurement sensor state,(distance)
 
@@ -101,6 +100,7 @@ for i=2:(2*n_f_a+1)
     wg_f_a(i) = 1/(2*(n_f_a + lambda_f_a));    
     wc_f_a(i) = wg_f_a(i);    
 end
+
 %feature initialization
 n_f= dimf;
 alpha_f=0.9; 

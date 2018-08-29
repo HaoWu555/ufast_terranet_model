@@ -1,7 +1,7 @@
 function data = uslam
 
 clear; setconfigfile; h= setup_animations(car_es,car);
-particles = initialize_particles(NPARTICLES,car_es,sigmaS);
+particles = initialize_particles(NPARTICLES,car_es);
 profile off;
 profile on -detail builtin
 
@@ -9,15 +9,20 @@ for t=1:timestep % for all sampling steps (use faster way)
     
     % Predict vehicle state
     for i=1:NPARTICLES
-%            particles(i)= predictACFRu(particles(i),V(t),G(t),Qe,vehicle,dt,n_r,lambda_r,wg_r,wc_r);
-        particles(i)= predictACFRu(particles(i),V(:,t),Qe,dt,n_r,lambda_r,wg_r,wc_r);
+        particles(i)= predictACFRu(particles(i),V(1,t),G(1,t),Qe,vehicle,dt,n_r,lambda_r,wg_r,wc_r);
     end
 
+    % Predict feature vehicle state
+    for i=1:NPARTICLES
+        particles(i)= predict_feature(particles(i),V(2:end,t),G(2:end,t),Qe,vehicle,dt,n_r,lambda_r,wg_r,wc_r);
+    end
+    
     % Measurement update
     % Get observation
-    z = distance(:,t);
-    z = z(1:3).';
-     
+    for i= 1:NPARTICLES
+        particles(i) = data_assosication(particles(i),D(:,t),G(:,t));
+    end
+    
     % make the laser line
     plines= make_laser_lines(car(:,t),particles(1).xv); % use the first particle for drawing the laser line                               
 
@@ -26,18 +31,12 @@ for t=1:timestep % for all sampling steps (use faster way)
     %    [particles(i).zf, particles(i).idf, particles(i).zn]= data_associate(particles(i), z, Re, GATE_REJECT, GATE_AUGMENT); 
     %end
 
-    % particles feature state(other vehicle) update
-    for i=1:NPARTICLES 
-        particles(i).zf = z;   
-        particles(i).idf = [1,2,3];
-    end
-    
     % Known map features
     for i=1:NPARTICLES                  
             % Sample from optimal proposal distribution
-            particles(i) = sample_proposaluf(particles(i),particles(i).zf,particles(i).idf,Re,n_aug,lambda_aug,wg_aug,wc_aug);                                                
+            particles(i) = sample_proposaluf(particles(i),particles(i).zf,Re,n_aug,lambda_aug,wg_aug,wc_aug);                                                
             % Map update
-            particles(i)= feature_updateu(particles(i),particles(i).zf,particles(i).idf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a);                        
+            particles(i)= feature_updateu(particles(i),particles(i).zf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a);                        
     end 
 
     % Resampling *before* computing proposal permits better particle diversity
@@ -66,15 +65,16 @@ data= particles;
 % 
 %
 
-function p = initialize_particles(np,car_es,sigmaS)
-for i=1:3, pf(:,:,i) = [sigmaS^2 0; 0 sigmaS^2]; end
+function p = initialize_particles(np,car_es)
 for i=1:np
     p(i).w= 1/np; % initial particle weight
     p(i).xv= [car_es(1,1);car_es(2,1)]; % initial vehicle pose
-    p(i).Pv= [sigmaS^2 0; 0 sigmaS^2]; % initial robot covariance that considers a numerical error
+    p(i).Pv= 9*eye(2); % initial robot covariance that considers a numerical error
     p(i).Kaiy= []; % temporal keeping for a following measurement update
     p(i).xf= [car_es(3:2:7,1).'; car_es(4:2:8,1).']; % feature mean states
-    p(i).Pf= pf; % feature covariances    
+    for j= 1: size(car_es)/2-1
+        p(i).Pf(:,:,j)= 9*eye(2); % feature covariances
+    end
     p(i).zf= []; % known feature locations
     p(i).idf= []; % known feature index
     p(i).zn= []; % New feature locations   

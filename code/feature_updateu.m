@@ -1,20 +1,24 @@
-function particle= feature_updateu(particle,zf,idf,R,n,lambda,wg,wc)
+function particle= feature_updateu(particle,zf,R,n,lambda,wg,wc)
 % Having selected a new pose from the proposal distribution, this pose is assumed
 % perfect and each feature update may be computed independently and without pose uncertainty.
 
 xv= particle.xv;        
-xf= particle.xf(:,idf);
-Pf= particle.Pf(:,:,idf);
-dimf = size(xf,1);
-dimz = size(zf,1);
+xf= particle.xf;
+xf= xf(1:2,:);    % feature vehicle state without geering
+Pf= particle.Pf;
+Pf = Pf(1:2,1:2,:);   % covariance without geering
+dimf = size(xf,1);  
+dimz = size(zf,1);     % 
+dimv = size(xf,2);
+ob = 1;  % observation value only distance
+vc = 1;  % all this value is compared to the vehicle 1
 
 % each feature
-for i=1:length(idf)
+for i=1:dimv
     % augmented feature state
-    %xf_aug= [xf(:,i) ; zeros(2,1)];
-    xf_aug= [xf(:,i) ; zeros(1,1)];
+    xf_aug= [xf(:,i) ; zeros(ob,1)];
     %Pf_aug= [Pf(:,:,i) zeros(2); zeros(2) R];
-    Pf_aug= [Pf(:,:,i) zeros(2,1); zeros(1,2) R];
+    Pf_aug= [Pf(:,:,i) zeros(dimf,ob); zeros(ob,dimf) R];
     % disassemble the covariance
     P = (n+lambda)*(Pf_aug) + eps*eye(n);
     S = chol(P)';
@@ -27,7 +31,7 @@ for i=1:length(idf)
     end
     
     % transform the sigma points
-    Z = zeros(dimz,2*n+1);
+    Z = zeros(ob,2*n+1);
     bs=zeros(1,2*n+1); % bearing sign    
     for k=1:(2*n+1)
         d= Kai(1:2,k) - xv(1:2);
@@ -79,7 +83,7 @@ for i=1:length(idf)
 
     % standard KF (slightly faster than Cholesky update, the same accuracy)
 %     z_hat(2)=pi_to_pi(z_hat(2));
-    v=zf(:,i) - z_hat;
+    v=zf(vc,i) - z_hat;   
     %v(2) = pi_to_pi(v(2));
 
     Kt = Sigma / St;    
@@ -87,6 +91,6 @@ for i=1:length(idf)
     Pf(:,:,i) = Pf(:,:,i) - Kt * St * Kt';
 end
 
-particle.xf(:,idf)= xf;
-particle.Pf(:,:,idf)= Pf;
+particle.xf= xf;
+particle.Pf= Pf;
 
