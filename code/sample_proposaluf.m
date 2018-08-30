@@ -5,28 +5,29 @@ xv_= particle.xv; % predictive vehicle state
 Pv_= particle.Pv; % predictive vehicle state error covariance
 xf = particle.xf;
 Pf = particle.Pf;
+
 ob = 1; % measurement value (distance)
 
-fv = size(zf,2)-1;    % number of feature vehicle
+fv = size(zf,2)-1;      % number of feature vehicle
 dimv= size(xv_,1);      % vehicle state dimension
 dimz= size(zf,1);       % measurement sensor state dimension
 dimf= size(xf,1);       % feature state dimension  (% augmentation adding xfi's x and y posiiton only)
 
 % for batch update
 z_hat= zeros(ob*fv,1); % predictive observation
-z= zeros(dimz*fv,1); % sensory observation
+z= zeros(ob*fv,1);   % sensory observation
 A= zeros(ob*fv,2*n+1); % stack of innovation covariance for vehicle uncertainty
 wc_s= sqrt(wc);
 
-for i=1:fv
+z(:,1)=zf(:,1);               % stack of sensory observations
+for i=1:dimz
     xfi=particle.xf(1:2,i);    % get i-th feature mean, only x and y position without geering
     Pfi=particle.Pf(:,:,i);  % get i-th feature cov.
     %z(2*i-1:2*i,1)=zf(:,i); % stack of sensory observations
-    z=zf(:,i);               % stack of sensory observations
     
     % state augmentation
     x_aug = [xv_ ; xfi];      % augmentation adding xfi's x and y posiiton only
-    P_aug = [Pv_ zeros(dimv,dimf) ; zeros(dimf,dimv) Pfi(1:2,1:2)];  % augmentation adding xfi's x and y posiiton only
+    P_aug = [Pv_ zeros(dimv,dimf) ; zeros(dimf,dimv) Pfi];  % augmentation adding xfi's x and y posiiton only
      
     % set sigma points
     Ps = (n+lambda)*(P_aug) + eps*eye(n); 
@@ -42,7 +43,7 @@ for i=1:fv
     %bs=zeros(1,2*n+1); % bearing sign    
     z_hati = 0; % predicted observation ('dimz' by 1)    
     for k=1:(2*n+1) % pass the sigma pts through the observation model
-        d= Ksi(dimv+1:dimv+dimf,k) - Ksi(1:dimv-1,k);
+        d= Ksi(dimv+1:dimv+dimf,k) - Ksi(1:dimv,k);
         r= sqrt(d(1)^2 + d(2)^2); % range 
         %bearing= atan2(d(2),d(1));
         %bs(k)=sign(bearing);    
@@ -58,7 +59,7 @@ for i=1:fv
         %     end
          % end
        %Ai(:,k)= [r;      bearing - Ksi(dimv,k)]; % bearing  **do not use pi_to_pi here** 
-       Ai(:,k)= [r];
+       Ai(:,k)= r;
        z_hati = z_hati + wg(k)*Ai(:,k);  % predictive observation         
     end    
     z_hati_rep= repmat(z_hati,1,2*n+1);
@@ -107,7 +108,6 @@ Lt= S; % square matrix of 'dimz*fv'
 den= sqrt(2*pi*det(Lt));
 num= exp(-0.5 * v' / Lt * v);
 w = num/den;
-if w==0, w = 1e-234; end
 particle.w = particle.w * w;
 
 % sample from proposal distribution

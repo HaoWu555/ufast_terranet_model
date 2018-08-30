@@ -11,17 +11,15 @@ epath= [];  % estimation path
 % car real position
 load car.mat
 % load the car velocity
-load velocity_abs.mat
-V = velocity;
+load velocity.mat
+V = V;
 % load car estimation position
 load car_es.mat
 % load distance
 load D.mat
 D = D;
-load Geering.mat
-G = Geering;
 
-timestep = size(velocity,1);
+timestep = size(V,2);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -35,8 +33,7 @@ veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
 
 % control noises. You can change these values for your application.
 sigmaV= 1; % [m/s]
-sigmaG= (1*pi/180); % [rad]
-Qe = [sigmaV^2 0; 0 sigmaG^2];  % velocity v and geer g
+Qe = [sigmaV^2 0; 0 sigmaV^2];  % velocity v and geer g
 
 % observation noises. 
 sigmaS= 1; % [m]              % distance
@@ -55,8 +52,8 @@ NEFFECTIVE= 0.5*NPARTICLES; % minimum number of effective particles
 
 % parameters related to SUT
 dimv= 2; % (x, y)
-dimQ= 2; % (control value dimension: velocity and geering)
-dimf= 2; % feature state
+dimQ= 2; % (control value dimension: velocity vx and vy)
+dimf= 2; % feature state (x y)
 dimz= 1; % number of measurement sensor state,(distance)
 
 % vehicle update

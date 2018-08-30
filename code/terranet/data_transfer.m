@@ -9,9 +9,9 @@ V = velocity.';
 load car_es.mat
 % load distance
 load distance.mat
-%D = distance.';
+d = distance.';
 
-D = [distance(1:3,:); distance(1,:); distance(4:5,:); distance(2:2:6,:); distance(3,:); distance(5:6,:)];
+D = [d(1:3,:); d(1,:); d(4:5,:); d(2:2:6,:); d(3,:); d(5:6,:)];
 
 vx1 = V(1,:);
 vy1 = V(2,:);
@@ -21,6 +21,8 @@ vx3 = V(5,:);
 vy3 = V(6,:);
 vx4 = V(7,:);
 vy4 = V(8,:);
+
+velocity = [vx1;vy1;vx2;vy2;vx3;vy3;vx4;vy4];
 
 G1 = atan2(vy1, vx1);
 G2 = atan2(vy2, vx2);
@@ -33,7 +35,7 @@ Geering_rate = diff(Geering,1,2);
 Geering_rate = [Geering(:,1) Geering_rate];
 
 [a,b] = size(Geering);
-Geering = Geering + randn(a,b)* (3/180*pi);
+Geering = Geering + randn(a,b)* (0.1/180*pi);
 
 
 v1 = sqrt(vx1.^2 + vy1.^2);

@@ -4,9 +4,8 @@ function particle= feature_updateu(particle,zf,R,n,lambda,wg,wc)
 
 xv= particle.xv;        
 xf= particle.xf;
-xf= xf(1:2,:);    % feature vehicle state without geering
 Pf= particle.Pf;
-Pf = Pf(1:2,1:2,:);   % covariance without geering
+%Pf = Pf(1:2,1:2,:);   % covariance without geering
 dimf = size(xf,1);  
 dimz = size(zf,1);     % 
 dimv = size(xf,2);
@@ -14,6 +13,7 @@ ob = 1;  % observation value only distance
 vc = 1;  % all this value is compared to the vehicle 1
 
 % each feature
+zf = zf(:,1);
 for i=1:dimv
     % augmented feature state
     xf_aug= [xf(:,i) ; zeros(ob,1)];
@@ -83,7 +83,7 @@ for i=1:dimv
 
     % standard KF (slightly faster than Cholesky update, the same accuracy)
 %     z_hat(2)=pi_to_pi(z_hat(2));
-    v=zf(vc,i) - z_hat;   
+    v=zf(i) - z_hat;   
     %v(2) = pi_to_pi(v(2));
 
     Kt = Sigma / St;    
