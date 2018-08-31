@@ -5,7 +5,7 @@ particles = initialize_particles(NPARTICLES,car_es);
 profile off;
 profile on -detail builtin
 
-for t=1:timestep % for all sampling steps (use faster way)   
+for t=2:timestep % for all sampling steps (use faster way)   
     
     % Predict vehicle state
     for i=1:NPARTICLES
@@ -24,17 +24,25 @@ for t=1:timestep % for all sampling steps (use faster way)
     end
     
     % make the laser line
-    plines= make_laser_lines(car(:,t),particles(1).xv); % use the first particle for drawing the laser line                               
+    plines= make_laser_lines(particles(1).xv,particles(1).xf); % use the first particle for drawing the laser line                               
 
     % Known map features
-    for j = 2          % j=1 always be the host vehicle
+    for j = 1:4   % j=1 always be the host vehicle
         for i=1:NPARTICLES                   
                 % Sample from optimal proposal distribution
-                particles(i) = sample_proposaluf(particles(i),particles(i).zf,Re,n_aug,lambda_aug,wg_aug,wc_aug);                                                
+                particles(i) = sample_proposaluf(particles(i),particles(i).zf,Re,n_aug,lambda_aug,wg_aug,wc_aug,j);                                                
                 % Map update
-                particles(i)= feature_updateu(particles(i),particles(i).zf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a);                        
+                particles(i)= feature_updateu(particles(i),particles(i).zf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a,j);                        
         end 
+        particles= resample_particles(particles, NEFFECTIVE);   
     end
+    
+    %for i=1:NPARTICLES                   
+    %    % Sample from optimal proposal distribution
+    %    particles(i) = sample_proposaluf(particles(i),particles(i).zf,Re,n_aug,lambda_aug,wg_aug,wc_aug,j);                                                
+    %    % Map update
+    %    particles(i)= feature_updateu(particles(i),particles(i).zf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a,j);                        
+    %end 
         
     % Resampling *before* computing proposal permits better particle diversity
     particles= resample_particles(particles, NEFFECTIVE);   
@@ -66,26 +74,25 @@ function p = initialize_particles(np,car_es)
 for i=1:np
     p(i).w= 1/np; % initial particle weight
     p(i).xv= [car_es(1,1);car_es(2,1)]; % initial vehicle pose
-    p(i).Pv= 9*eye(2); % initial robot covariance that considers a numerical error
+    p(i).Pv= 2*eye(2); % initial robot covariance that considers a numerical error
     p(i).Kaiy= []; % temporal keeping for a following measurement update
     p(i).xf= [car_es(3:2:7,1).'; car_es(4:2:8,1).']; % feature mean states
     for j= 1: size(car_es)/2-1
-        p(i).Pf(:,:,j)= 9*eye(2); % feature covariances
+        p(i).Pf(:,:,j)= 2*eye(2); % feature covariances
     end
     p(i).zf= []; % known feature locations
     p(i).idf= []; % known feature index
     p(i).zn= []; % New feature locations   
 end
 
-
-function p= make_laser_lines (car,xv)
-if isempty(car), p=[]; return, end
-car(1) = xv(1);
-car(2) = xv(2);
-lnes(1,:) = zeros(1,3) + car(1);
-lnes(2,:) = zeros(1,3) + car(2);
-lnes(3:4,:) = [car(3) car(5) car(7) 
-               car(4) car(6) car(8)]; 
+function p= make_laser_lines (xv,xf)
+if isempty(xv), p=[]; return, end
+v1 = xv;  % hose vehicle
+v2 = xf(:,1); v3 = xf(:,2); v4 = xf(:,3);  % feature vehicle
+lnes(1,:) = zeros(1,3) + v1(1);
+lnes(2,:) = zeros(1,3) + v1(2);
+lnes(3:4,:) = [v2(1) v3(1) v4(1); 
+               v2(2) v3(2) v4(2)]; 
 p= line_plot_conversion (lnes);
 
 function p= make_covariance_ellipses(particle)
@@ -116,26 +123,40 @@ p(1,:)= [a(1,:)+x(1) NaN];
 
 function h= setup_animations(car_es,car)
 figure;
+set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 1, 0.96]);
 axis([400 650 400 750]);
 xlabel('[m]'); ylabel('[m]');
 hold on,% axis equal
 h.obs= plot(0,0,'g','erasemode','xor'); % observations
-h.xfp= plot(0,0,'r.','erasemode','background'); % estimated features (particle means)
-h.xvp= plot(car_es(1,1),car_es(2,1),'r.','erasemode','xor'); % estimated vehicle (particles)
+h.xfp= plot(0,0,'r*','erasemode','background'); % estimated features (particle means)
+h.xvp= plot(car_es(1,1),car_es(2,1),'r*','erasemode','xor'); % estimated vehicle (particles)
 h.cov= plot(0,0,'erasemode','xor'); % covariances of max weight particle
-h.epath= plot(0,0,'k','erasemode','xor'); 
+h.epath1= plot(0,0,'k','erasemode','xor'); 
+h.epath2= plot(0,0,'k','erasemode','xor'); 
+h.epath3= plot(0,0,'k','erasemode','xor'); 
+h.epath4= plot(0,0,'k','erasemode','xor'); 
 h.realpath1 = plot(car(1,1),car(2,1),'b.');
+h.realpath2 = plot(car(3,1),car(4,1),'k.');
+h.realpath3 = plot(car(5,1),car(6,1),'b.');
+h.realpath4 = plot(car(7,1),car(8,1),'k.');
+
 
 function do_plot(h, particles, plines, epath, car)
 xvp = [particles.xv];
 xfp = [particles.xf];
 w = [particles.w]; 
-ii= find(w== max(w)); 
+ii= find(w== max(w));  % plot the most value inportant particles
 if ~isempty(xvp), set(h.xvp, 'xdata', xvp(1,:), 'ydata', xvp(2,:)), end
 if ~isempty(xfp), set(h.xfp, 'xdata', xfp(1,:), 'ydata', xfp(2,:)), end
 if ~isempty(plines), set(h.obs, 'xdata', plines(1,:), 'ydata', plines(2,:)), end
 pcov= make_covariance_ellipses(particles(ii(1)));
 if ~isempty(pcov), set(h.cov, 'xdata', pcov(1,:), 'ydata', pcov(2,:)); end
-set(h.epath, 'xdata', epath(1,:), 'ydata', epath(2,:))
+set(h.epath1, 'xdata', epath.v1(1,:), 'ydata', epath.v1(2,:))
+set(h.epath2, 'xdata', epath.v2(1,:), 'ydata', epath.v2(2,:))
+set(h.epath3, 'xdata', epath.v3(1,:), 'ydata', epath.v3(2,:))
+set(h.epath4, 'xdata', epath.v4(1,:), 'ydata', epath.v4(2,:))
 set(h.realpath1, 'xdata', car(1,:),'ydata',car(2,:))
+set(h.realpath2, 'xdata', car(3,:),'ydata',car(4,:))
+set(h.realpath3, 'xdata', car(5,:),'ydata',car(6,:))
+set(h.realpath4, 'xdata', car(7,:),'ydata',car(8,:))
 drawnow

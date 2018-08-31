@@ -1,19 +1,34 @@
-function particle= feature_updateu(particle,zf,R,n,lambda,wg,wc)
+function particle= feature_updateu(particle,zf,R,n,lambda,wg,wc,j)
 % Having selected a new pose from the proposal distribution, this pose is assumed
 % perfect and each feature update may be computed independently and without pose uncertainty.
 
-xv= particle.xv;        
-xf= particle.xf;
-Pf= particle.Pf;
+if j==1
+    xv= particle.xv;        
+    xf= particle.xf;
+    Pf= particle.Pf;
+    Pv = particle.Pv;
+else  % consider the j is the host vehicle, others are the feature vehicles
+    xv= particle.xf(:,j-1);
+    % host vehicle
+    x = [particle.xv particle.xf];
+    x(:,j) = []; % delete the host vehicle now
+    xf= x;
+    % feature vehicle 
+    p = zeros(2,2,4);
+    p(:,:,1) = particle.Pv; p(:,:,2:size(zf,2)) = particle.Pf;
+    Pv = p(:,:,j);
+    p(:,:,j) = [];
+    Pf = p;
+end
+
 %Pf = Pf(1:2,1:2,:);   % covariance without geering
 dimf = size(xf,1);  
-dimz = size(zf,1);     % 
+dimc = size(zf,2);     % number of vehicle totally 
 dimv = size(xf,2);
 ob = 1;  % observation value only distance
-vc = 1;  % all this value is compared to the vehicle 1
 
 % each feature
-zf = zf(:,1);
+zf = zf(:,j);
 for i=1:dimv
     % augmented feature state
     xf_aug= [xf(:,i) ; zeros(ob,1)];
@@ -91,6 +106,48 @@ for i=1:dimv
     Pf(:,:,i) = Pf(:,:,i) - Kt * St * Kt';
 end
 
-particle.xf= xf;
-particle.Pf= Pf;
+if j==1
+    particle.xf= xf;
+    particle.Pf= Pf;
+elseif j==2
+    XF = zeros(dimf,dimc-1);
+    XF(:,1) = xv ; % save the correspondding feature vehicle state
+    XF(:,2:3) = xf(:,2:3);
+    particle.xf = XF;
+    particle.xv = xf(:,1);
+    
+    PF = zeros(2,2,3);
+    PF(:,:,1) = Pv;
+    PF(:,:,2:3) = Pf(:,:,2:3);
+    partilce.Pf = PF;
+    particle.Pv = Pf(:,:,1);
+elseif j==3
+    XF = zeros(dimf,dimc-1);
+    XF(:,2) = xv ; % save the correspondding feature vehicle state
+    XF(:,1) = xf(:,2);
+    XF(:,3) = xf(:,3);
+    particle.xf = XF;
+    particle.xv = xf(:,1);
+    
+    PF = zeros(2,2,3);
+    PF(:,:,2) = Pv;
+    PF(:,:,1) = Pf(:,:,2);
+    PF(:,:,3) = Pf(:,:,3);
+    partilce.Pf = PF;
+    particle.Pv = Pf(:,:,1);
+elseif j==4
+    XF = zeros(dimf,dimc-1);
+    XF(:,3) = xv; % save the correspondding feature vehicle state
+    XF(:,1:2) = xf(:,2:3);
+    particle.xf = XF;
+    particle.xv = xf(:,1);
+    
+    PF = zeros(2,2,3);
+    PF(:,:,3) = Pv;
+    PF(:,:,1) = Pf(:,:,2);
+    PF(:,:,2) = Pf(:,:,3);
+    partilce.Pf = PF;
+    particle.Pv = Pf(:,:,1);
+        
+end
 

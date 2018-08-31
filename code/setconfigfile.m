@@ -32,7 +32,7 @@ vehicle.a= 3.78; % [m]
 veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
 
 % control noises. You can change these values for your application.
-sigmaV= 1; % [m/s]
+sigmaV= 0.5; % [m/s]
 Qe = [sigmaV^2 0; 0 sigmaV^2];  % velocity v and geer g
 
 % observation noises. 
@@ -111,3 +111,5 @@ for i=2:(2*n_f+1)
     wg_f(i) = 1/(2*(n_f+lambda_f));    
     wc_f(i) = wg_f(i);    
 end
+
+epath.v1 = []; epath.v2 = []; epath.v3 = []; epath.v4 = []; 
