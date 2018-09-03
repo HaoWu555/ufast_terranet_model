@@ -1,5 +1,7 @@
 function data = uslam
 
+rng default;
+
 clear; close; setconfigfile; h= setup_animations(car_es,car);
 particles = initialize_particles(NPARTICLES,car_es);
 profile off;
@@ -27,41 +29,34 @@ for t=2:timestep % for all sampling steps (use faster way)
     plines= make_laser_lines(particles(1).xv,particles(1).xf); % use the first particle for drawing the laser line                               
 
     % Known map features
-    for j = 1:4   % j=1 always be the host vehicle
+    vv = [1 2 3 4 1].';  % the order of vehicle used to calculation in vehicle
+    for k = 1:size(vv)   % j=1 always be the host vehicle
+        j = vv(k);
         for i=1:NPARTICLES                   
                 % Sample from optimal proposal distribution
                 particles(i) = sample_proposaluf(particles(i),particles(i).zf,Re,n_aug,lambda_aug,wg_aug,wc_aug,j);                                                
                 % Map update
                 particles(i)= feature_updateu(particles(i),particles(i).zf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a,j);                        
         end 
-        particles= resample_particles(particles, NEFFECTIVE);   
+        
+        particles= resample_particles(particles, NEFFECTIVE, j);   
     end
     
-    %for i=1:NPARTICLES                   
-    %    % Sample from optimal proposal distribution
-    %    particles(i) = sample_proposaluf(particles(i),particles(i).zf,Re,n_aug,lambda_aug,wg_aug,wc_aug,j);                                                
-    %    % Map update
-    %    particles(i)= feature_updateu(particles(i),particles(i).zf,Re,n_f_a,lambda_f_a,wg_f_a,wc_f_a,j);                        
-    %end 
-        
-    % Resampling *before* computing proposal permits better particle diversity
-    particles= resample_particles(particles, NEFFECTIVE);   
 
     % When new features are observed, augment it to the map
-    for i=1:NPARTICLES        
-        if ~isempty(particles(i).zn)
-            if isempty(particles(i).zf) % sample from proposal distribution (if we have not already done so above)
-                particles(i).xv= multivariate_gauss(particles(i).xv, particles(i).Pv, 1);
-                particles(i).Pv= eps*eye(3);
-            end                        
-            particles(i)= add_feature(particles(i), particles(i).zn,Re);
-        end
-    end
+    %for i=1:NPARTICLES        
+    %    if ~isempty(particles(i).zn)
+    %        if isempty(particles(i).zf) % sample from proposal distribution (if we have not already done so above)
+    %            particles(i).xv= multivariate_gauss(particles(i).xv, particles(i).Pv, 1);
+    %            particles(i).Pv= eps*eye(3);
+    %        end                        
+    %        particles(i)= add_feature(particles(i), particles(i).zn,Re);
+    %    end
+    %end
                   
-
     % Plot
     epath = get_epath(particles, epath, NPARTICLES);
-    do_plot(h, particles, plines, epath, car);        
+    do_plot(h, particles, plines, epath, car, NPARTICLES);  % the host vehicle is 1st vehicle
 end
 profile report
 
@@ -72,7 +67,7 @@ data= particles;
 
 function p = initialize_particles(np,car_es)
 for i=1:np
-    p(i).w= 1/np; % initial particle weight
+    for j=1:size(car_es,1)/2, p(i).w(j)= 1/np; end % initial particle weight
     p(i).xv= [car_es(1,1);car_es(2,1)]; % initial vehicle pose
     p(i).Pv= 2*eye(2); % initial robot covariance that considers a numerical error
     p(i).Kaiy= []; % temporal keeping for a following measurement update
@@ -141,16 +136,18 @@ h.realpath3 = plot(car(5,1),car(6,1),'b.');
 h.realpath4 = plot(car(7,1),car(8,1),'k.');
 
 
-function do_plot(h, particles, plines, epath, car)
+function do_plot(h, particles, plines, epath, car, NPARTICLES)
+% vth is the host vehilce
 xvp = [particles.xv];
 xfp = [particles.xf];
-w = [particles.w]; 
-ii= find(w== max(w));  % plot the most value inportant particles
+w = [];
+for i=1:NPARTICLES, w = [w particles(i).w(1)]; end 
+ii= find(w== max(w));  % plot the most value important particles
 if ~isempty(xvp), set(h.xvp, 'xdata', xvp(1,:), 'ydata', xvp(2,:)), end
 if ~isempty(xfp), set(h.xfp, 'xdata', xfp(1,:), 'ydata', xfp(2,:)), end
 if ~isempty(plines), set(h.obs, 'xdata', plines(1,:), 'ydata', plines(2,:)), end
-pcov= make_covariance_ellipses(particles(ii(1)));
-if ~isempty(pcov), set(h.cov, 'xdata', pcov(1,:), 'ydata', pcov(2,:)); end
+%pcov= make_covariance_ellipses(particles(ii(1)));
+%if ~isempty(pcov), set(h.cov, 'xdata', pcov(1,:), 'ydata', pcov(2,:)); end
 set(h.epath1, 'xdata', epath.v1(1,:), 'ydata', epath.v1(2,:))
 set(h.epath2, 'xdata', epath.v2(1,:), 'ydata', epath.v2(2,:))
 set(h.epath3, 'xdata', epath.v3(1,:), 'ydata', epath.v3(2,:))

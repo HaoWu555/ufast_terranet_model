@@ -13,6 +13,8 @@ load car.mat
 % load the car velocity
 load velocity.mat
 V = V;
+[a,b] = size(V);
+V = V + sqrt(0.8)*randn(a,b);
 % load car estimation position
 load car_es.mat
 % load distance

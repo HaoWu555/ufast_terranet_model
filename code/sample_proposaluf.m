@@ -18,16 +18,11 @@ else
     p(:,:,j) = [];
     Pf = p;
 end
-
-% modify the weight
-
-% modify the weight
     
-
 ob = 1; % measurement value (distance)
 z=zf(:,j);               % stack of sensory observations,  % sensory observation
 
-fv = size(zf,2)-1;      % number of feature vehicle
+fv  = size(zf,2)-1;      % number of feature vehicle
 dimv= size(xv_,1);      % vehicle state dimension
 dimz= size(zf,1);       % measurement sensor state dimension
 dimf= size(xf,1);       % feature state dimension  (% augmentation adding xfi's x and y posiiton only)
@@ -62,22 +57,8 @@ for i=1:dimz
     for k=1:(2*n+1) % pass the sigma pts through the observation model
         d= Ksi(dimv+1:dimv+dimf,k) - Ksi(1:dimv,k);
         r= sqrt(d(1)^2 + d(2)^2); % range 
-        %bearing= atan2(d(2),d(1));
-        %bs(k)=sign(bearing);    
-        %if k>1 % unify the sign
-        %    if bs(k) ~= bs(k-1)           
-        %        if bs(k)<0 && -pi < bearing && bearing < -pi/2
-        %            bearing=bearing+2*pi;
-        %            bs(k)=sign(bearing);    
-        %        elseif bs(k)>0 && pi/2 < bearing && bearing < pi
-        %                bearing=bearing-2*pi;
-        %                bs(k)=sign(bearing);    
-        %        end
-        %     end
-         % end
-       %Ai(:,k)= [r;      bearing - Ksi(dimv,k)]; % bearing  **do not use pi_to_pi here** 
-       Ai(:,k)= r;
-       z_hati = z_hati + wg(k)*Ai(:,k);  % predictive observation         
+        Ai(:,k)= r;
+        z_hati = z_hati + wg(k)*Ai(:,k);  % predictive observation         
     end    
     z_hati_rep= repmat(z_hati,1,2*n+1);
     A(i,:)= (Ai - z_hati_rep); 
@@ -97,6 +78,7 @@ end
 % innovation covariance (ISSUE)
 S=A*A'; % vehicle uncertainty + map + measurement noise
 S=(S+S')*0.5 + R_aug;  % make symmetric for better numerical stability
+% vth means the v-th vehicle calculated for weight
 
 % cross covariance: considering vehicle uncertainty
 X = zeros(dimv,2*n+1); % stack
@@ -127,7 +109,7 @@ num= exp(-0.5 * v' / Lt * v);
 w = num/den;
 
 % modify the weight
-particle.w = particle.w * w;
+particle.w(j) = particle.w(j) * w;
 % modify the weight
 
 
@@ -138,6 +120,8 @@ if j==1
      particle.xv = xvs;
      particle.Pv= eye(2)*eps; % initialize covariance
 else
+     %particle.xv = particle.xf(:,j-1);
+     %particle.Pv = particle.Pf(:,:,j-1);
      particle.xf(:,j-1) = xvs; % update to the feature value
      particle.Pf(:,:,j-1) = eye(2)*eps;
 end
