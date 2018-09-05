@@ -1,4 +1,4 @@
-function particle = predictACFRu(particle,V,G,Q,vehicle,dt,n,lambda,wg,wc)
+function particle = predictACFRu(particle,V,Q,dt,n,lambda,wg,wc)
 
 % INPUTS:
 % xv - vehicle pose sample
@@ -10,6 +10,10 @@ xv= particle.xv;
 Pv= particle.Pv;
 dimv= size(xv,1);
 dimQ= size(Q,1);
+xvl = particle.xvl;
+
+% save the last vehicle state
+xvl = [xv]
 
 % state augmentation: process noise only
 x_aug = [xv ; zeros(dimQ,1)]; 
@@ -29,14 +33,11 @@ end
 Kaiy = zeros(size(xv,1),2*n+1);
 for k=1:(2*n+1) % transform sigma pts through the process model
     
-    Vn = V + Kaix(4,k); % add process noise of linear speed if exist in Kaix
-    Gn = G + Kaix(5,k); % add process noise of steering if exist in Kaix
+    V1 = V(1) + Kaix(3,k); % add process noise of linear speed if exist in Kaix
+    V2 = V(2) + Kaix(4,k); % add process noise of linear speed if exist in Kaix
     
-    Vc = Vn / (1-tan(Gn)*vehicle.H/vehicle.L); % transform
-    
-    Kaiy(1,k) = Kaix(1,k) + dt*(Vc*cos(Kaix(3,k)) - Vc/vehicle.L*tan(Gn)*(vehicle.a*sin(Kaix(3,k))+vehicle.b*cos(Kaix(3,k)))); 
-    Kaiy(2,k) = Kaix(2,k) + dt*(Vc*sin(Kaix(3,k)) + Vc/vehicle.L*tan(Gn)*(vehicle.a*cos(Kaix(3,k))-vehicle.b*sin(Kaix(3,k))));
-    Kaiy(3,k) = Kaix(3,k) + Vc*dt*tan(Gn)/vehicle.L;
+    Kaiy(1,k) = Kaix(1,k) + V1*dt;
+    Kaiy(2,k) = Kaix(2,k) + V2*dt;
 end
  
 xv_p = 0;

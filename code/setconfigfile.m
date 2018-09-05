@@ -1,43 +1,46 @@
 %%% Set environment
 format compact;
-path(path, '../')
+path(path, 'simple_scenario')
 plines= zeros(2,1); 
 featurecountnum= 1; % initialize laser feature count
 epath= [];  % estimation path
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Experiment on Victoria park
-load gps_x.txt;
-load gps_y.txt;
-%%% Entire dataset
-load ObservationDistance.txt; OD= ObservationDistance;
-load ObservationAngle.txt; OA= ObservationAngle;
-load lasersampling.txt;
-load time.txt; sampling= time;
-load speed.txt; V= speed;
-load steering.txt; G= steering;
-n_lasersampling = length(lasersampling);
-n_sampling = round(length(sampling));
+%%% Experiment on simple scenario
+load road.mat;
+% load the distance with vehicle and the virtual transmitter
+load dist.mat;
+D = dist;
+% load the velocity
+load velocity.mat
+V = velocity;
+% load the virtual transmitter
+load vtx.mat 
+
+timestep = size(dist,2);
+dt = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % H/W parameter(truck). Keep the values.
-dt= 0.025; % [s], time interval between control signals
-vehicle.L= 2.83; % [m]  % wheel base
-vehicle.H= 0.76; % [m]
-vehicle.b= 0.5; % [m]
-vehicle.a= 3.78; % [m]
-veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
+%dt= 0.025; % [s], time interval between control signals
+%vehicle.L= 2.83; % [m]  % wheel base
+%vehicle.H= 0.76; % [m]
+%vehicle.b= 0.5; % [m]
+%vehicle.a= 3.78; % [m]
+%veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
 
 % control noises. You can change these values for your application.
-sigmaV= 2; % [m/s]
-sigmaG= (6*pi/180); % [rad]
-Qe = [sigmaV^2 0; 0 sigmaG^2];
+sigmaVx= 1; % [m/s]
+sigmaVy= 1; % [m/s]
+%sigmaG= (6*pi/180); % [rad]
+Qe = [sigmaVx^2 0; 0 sigmaVy^2];
 
 % observation(measurement) noises 
-sigmaR= 1; % [m]
-sigmaB= (3*pi/180); % [rad]
-Re = [sigmaR^2 0; 0 sigmaB^2];
-perceplimit=30; % [m] 
+sigmaR= 0.5; % [m]
+%sigmaB= (3*pi/180); % [rad]
+%Re = [sigmaR^2 0; 0 sigmaB^2];
+Re = [sigmaR^2];
+% perceplimit=30; % [m] 
 
 % resampling criteria
 NPARTICLES= 5; % number of particles(samples, hypotheses) 
@@ -49,7 +52,10 @@ GATE_AUGMENT_NN= 2000; % minimum distance for creation of new feature
 GATE_AUGMENT= 100; % minimum distance for creation of new feature (100)
 
 % parameters related to SUT
-dimv= 3; dimQ= 2; dimR= 2; dimf= 2;
+dimv= 2; % vehicle state x and y
+dimQ= 2; % vehicle control noise of vx and vy
+dimR= 1; % measurement noise (distance)
+dimf= 2; % feature state x and y
 
 % vehicle update
 n_aug=dimv+dimf; 
@@ -66,9 +72,7 @@ end
 
 % vehicle prediction 
 n_r=dimv+dimQ;
-alpha_r=0.9;
-beta_r=2;
-kappa_r=0;
+alpha_r=0.9; beta_r=2; kappa_r=0;
 lambda_r = alpha_r^2 * (n_r + kappa_r) - n_r; 
 lambda_r= lambda_r+dimR; % should consider dimension of related terms for obtaining equivalent effect with full augmentation
 wg_r = zeros(1,2*n_r+1); wc_r = zeros(1,2*n_r+1);

@@ -7,9 +7,11 @@ Pf= zeros(2,2,lenz);
 xv= particle.xv;
 
 for i=1:lenz
-    r= z(1,i); b= z(2,i);
-    s= sin(xv(3)+b); 
-    c= cos(xv(3)+b);
+    r= z(1,i);
+    
+    theta = (sign(randn(1)-0.5)*2)*pi;
+    c = sin(theta);
+    s = sin(theta);
     
     xf(:,i)= [xv(1) + r*c;  
               xv(2) + r*s];
