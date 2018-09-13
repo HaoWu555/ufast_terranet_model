@@ -5,6 +5,9 @@ xv_= particle.xv; % predictive vehicle state
 Pv_= particle.Pv; % predictive vehicle state error covariance
 xf = particle.xf;
 dimz = size(zf,2);
+xvl = particle.xvl; 
+Pvl = particle.Pvl;
+
 
 %lenidf= length(idf); % number of currently observed features
 dimv = size(xv_,1); % vehicle state dimension
@@ -18,32 +21,40 @@ A= zeros(dimm*dimz,2*n+1); % stack of innovation covariance for vehicle uncertai
 wc_s= sqrt(wc);
 
 for i=1:dimz
-    %j=idf(i); % index of this observed feature
     xfi=particle.xf(:,i);  % get j-th feature mean
     Pfi=particle.Pf(:,:,i); % get j-th feature cov.
-    %z(2*i-1:2*i,1)=zf(:,i); % stack of sensory observations
     z(i,1) = zf(:,i);        % stack of sensory observations
     
     % state augmentation
     x_aug = [xv_ ; xfi];
     P_aug = [Pv_ zeros(dimv,dimf) ; zeros(dimf,dimv) Pfi]; 
    
+    xl_aug = [xvl ; xfi];
+    Pl_aug = [Pvl zeros(dimv,dimf) ; zeros(dimf,dimv) Pfi]; 
+    
     % set sigma points
-    Ps = (n+lambda)*(P_aug) + eps*eye(n); 
-    Ss = chol(Ps)';
-    Ksi = zeros(n,2*n+1);
-    Ksi(:,1) = x_aug;
+    Ps = (n+lambda)*(P_aug) + eps*eye(n);   Psl = (n+lambda)*(Pl_aug) + eps*eye(n); 
+    Ss = chol(Ps)';                         Ssl = chol(Psl)';
+    Ksi = zeros(n,2*n+1);                   Ksil = zeros(n,2*n+1);
+    Ksi(:,1) = x_aug;                       Ksil(:,1) = xl_aug;
     for k=1:n
         Ksi(:,k+1) = x_aug + Ss(:,k);
         Ksi(:,k+1+n) = x_aug - Ss(:,k);    
+        
+        Ksil(:,k+1) = xl_aug + Ssl(:,k);
+        Ksil(:,k+1+n) = xl_aug - Ssl(:,k);    
     end
     % passing through observation model
     Ai = zeros(dimm,2*n+1);
     z_hati = 0; % predicted observation ('dimf' by 1)    
     for k=1:(2*n+1) % pass the sigma pts through the observation model
         d= Ksi(dimv+1:dimv+dimf,k) - Ksi(1:dimv,k);
-        r= sqrt(d(1)^2 + d(2)^2); % range 
-        Ai(:,k)= [r]; % bearing  **do not use pi_to_pi here** 
+        r= sqrt(d(1)^2 + d(2)^2); % range
+        
+        dl= Ksil(dimv+1:dimv+dimf,k) - Ksil(1:dimv,k);
+        rl= sqrt(dl(1)^2 + dl(2)^2); % range
+        
+        Ai(:,k)= [r-rl]; % bearing  **do not use pi_to_pi here** 
         z_hati = z_hati + wg(k)*Ai(:,k);  % predictive observation         
     end    
     z_hati_rep= repmat(z_hati,1,2*n+1);
@@ -53,6 +64,7 @@ for i=1:dimz
     end    
     z_hat(i,1)= z_hati;  
 end
+
 % augmented noise matrix
 R_aug = zeros(dimm*dimz,dimm*dimz);
 for i=1:dimz
@@ -89,9 +101,15 @@ w = num/den;
 particle.w = particle.w * w;
 
 % sample from proposal distribution
-xvs = multivariate_gauss(xv,Pv,1); 
-particle.xv = xvs;
-particle.Pv= eye(2)*eps; % initialize covariance 
+%xvs = multivariate_gauss(xv,Pv,1); 
+%particle.xv = xvs;
+%particle.Pv= eye(2)*eps; % initialize covariance 
+
+particle.xv = xv;
+particle.Pv = Pv;
+
+%particle.xvl = xvl; 
+%particle.Pvl = eye(2)*eps;
 
 %
 %

@@ -1,6 +1,6 @@
 %%% Set environment
 format compact;
-path(path, 'simple_scenario')
+path(path, './simple_scenario')
 plines= zeros(2,1); 
 featurecountnum= 1; % initialize laser feature count
 epath= [];  % estimation path
@@ -8,9 +8,11 @@ epath= [];  % estimation path
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Experiment on simple scenario
 load road.mat;
+road(:,1) = road(:,1) + randn(2,1)*1;
 % load the distance with vehicle and the virtual transmitter
 load dist.mat;
 D = dist;
+DDiff = diff(dist.').';
 % load the velocity
 load velocity.mat
 V = velocity;
@@ -18,7 +20,8 @@ V = velocity;
 load vtx.mat 
 
 timestep = size(dist,2);
-dt = 1;
+
+dt = 1; %[s] the timestamp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % H/W parameter(truck). Keep the values.
@@ -30,13 +33,13 @@ dt = 1;
 %veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
 
 % control noises. You can change these values for your application.
-sigmaVx= 1; % [m/s]
-sigmaVy= 1; % [m/s]
+sigmaVx= 0.1; % [m/s]
+sigmaVy= 0.1; % [m/s]
 %sigmaG= (6*pi/180); % [rad]
 Qe = [sigmaVx^2 0; 0 sigmaVy^2];
 
 % observation(measurement) noises 
-sigmaR= 0.5; % [m]
+sigmaR= 0.1; % [m]
 %sigmaB= (3*pi/180); % [rad]
 %Re = [sigmaR^2 0; 0 sigmaB^2];
 Re = [sigmaR^2];

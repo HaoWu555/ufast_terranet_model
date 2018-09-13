@@ -5,6 +5,9 @@ function particle= feature_updateu(particle,zf,R,n,lambda,wg,wc)
 xv= particle.xv;        
 xf= particle.xf;
 Pf= particle.Pf;
+
+xvl = particle.xvl;
+
 dimf = size(xf,1);
 dimz = size(zf,2);
 dimm = size(zf,1);
@@ -30,9 +33,11 @@ for i=1:dimz
     Z = zeros(dimm,2*n+1);
     for k=1:(2*n+1)
         d= Kai(1:2,k) - xv(1:2);
-        r= sqrt(d(1)^2 + d(2)^2) + Kai(3,k); % range + noise
+        dl = Kai(1:2,k) - xvl(1:2);
+        r= sqrt(d(1)^2 + d(2)^2) ; % range + noise
+        rl= sqrt(dl(1)^2 + dl(2)^2); % range + noise        
         % predictive sigma pints
-        Z(:,k)= [r]; % bearing + noise  **do not use pi_to_pi here**     
+        Z(:,k)= [r-rl]; % bearing + noise  **do not use pi_to_pi here**     
     end  
     
     z_hat = 0; % predictive observation
@@ -48,7 +53,7 @@ for i=1:dimz
     
     Sigma = 0; % cross covariance (think why Kai(1:2,k) is used rather than Kai(:,k))
     for k=1:(2*n+1)
-        Sigma = Sigma + wc(k)*(Kai(1:2,k) - xf(:,i))*(Z(:,k) - z_hat)';
+        Sigma = Sigma + wc(k)* (Kai(1:2,k) - xf(:,i))*(Z(:,k) - z_hat)' ;
     end
 
     % Cholesky update 

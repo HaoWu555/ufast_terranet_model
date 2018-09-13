@@ -10,10 +10,10 @@ xv= particle.xv;
 Pv= particle.Pv;
 dimv= size(xv,1);
 dimQ= size(Q,1);
-xvl = particle.xvl;
 
 % save the last vehicle state
-xvl = [xv]
+particle.xvl = xv;
+particle.Pvl = Pv;
 
 % state augmentation: process noise only
 x_aug = [xv ; zeros(dimQ,1)]; 
