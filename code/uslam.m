@@ -5,7 +5,6 @@ particles = initialize_particles(NPARTICLES,road,vtx);
 profile off;
 profile on -detail builtin
 
-
 tt = 2;  % 2 timestep in one frame
 %timeframe = (timestep-1)/tt;  % 2 timestep in one frame
 
