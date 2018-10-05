@@ -14,7 +14,7 @@ for t = 2:timestep
      
     % Get observation
     for i=1:NPARTICLES
-        particles(i).zf = DDiff(:,1).'; % start from beginning
+        particles(i).zf = D(:,t).'; % start from beginning
     end
     
     % Known map features

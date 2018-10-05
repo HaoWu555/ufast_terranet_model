@@ -43,11 +43,7 @@ for i=1:dimz
     for k=1:(2*n+1) % pass the sigma pts through the observation model
         d= Ksi(dimv+1:dimv+dimf,k) - Ksi(1:dimv,k);
         r= sqrt(d(1)^2 + d(2)^2); % range
-        
-        dl= Ksi(dimv+1:dimv+dimf,k) - xvl(1:2);
-        rl= sqrt(dl(1)^2 + dl(2)^2); % range
-        
-        Ai(:,k)= [r-rl]; % bearing  **do not use pi_to_pi here** 
+        Ai(:,k)= [r]; % bearing  **do not use pi_to_pi here** 
         z_hati = z_hati + wg(k)*Ai(:,k);  % predictive observation         
     end    
     z_hati_rep= repmat(z_hati,1,2*n+1);

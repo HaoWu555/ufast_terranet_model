@@ -35,8 +35,7 @@ for i=1:dimz
         d= Kai(1:2,k) - xv(1:2);
         dl = Kai(1:2,k) - xvl(1:2);
         r= sqrt(d(1)^2 + d(2)^2);    % range + noise
-        rl= sqrt(dl(1)^2 + dl(2)^2); % range + noise 
-        dd = r-rl +Kai(3,k);
+        dd = r+Kai(3,k);
         % predictive sigma pints
         Z(:,k)= [ dd ];    % bearing + noise  **do not use pi_to_pi here**     
     end  
