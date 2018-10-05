@@ -12,25 +12,17 @@ road(:,1) = road(:,1) + randn(2,1)*1;
 % load the distance with vehicle and the virtual transmitter
 load dist.mat;
 D = dist;
-DDiff = diff(dist.').';
+DDiff = diff(dist.').' + 0.001* randn(4,60);
 % load the velocity
 load velocity.mat
-V = velocity;
+V = velocity + 0.1* randn(2,60);
 % load the virtual transmitter
 load vtx.mat 
 
-timestep = size(dist,2);
+timestep = size(dist,2)-1;
 
 dt = 1; %[s] the timestamp
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% H/W parameter(truck). Keep the values.
-%dt= 0.025; % [s], time interval between control signals
-%vehicle.L= 2.83; % [m]  % wheel base
-%vehicle.H= 0.76; % [m]
-%vehicle.b= 0.5; % [m]
-%vehicle.a= 3.78; % [m]
-%veh= [0 -vehicle.H -vehicle.H; 0 -1 1];
 
 % control noises. You can change these values for your application.
 sigmaVx= 0.1; % [m/s]

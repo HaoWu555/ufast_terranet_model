@@ -8,7 +8,6 @@ dimz = size(zf,2);
 xvl = particle.xvl; 
 Pvl = particle.Pvl;
 
-
 %lenidf= length(idf); % number of currently observed features
 dimv = size(xv_,1); % vehicle state dimension
 dimf = size(xf,1); % feature vehicle state dimension
@@ -28,21 +27,15 @@ for i=1:dimz
     % state augmentation
     x_aug = [xv_ ; xfi];
     P_aug = [Pv_ zeros(dimv,dimf) ; zeros(dimf,dimv) Pfi]; 
-   
-    xl_aug = [xvl ; xfi];
-    Pl_aug = [Pvl zeros(dimv,dimf) ; zeros(dimf,dimv) Pfi]; 
     
     % set sigma points
-    Ps = (n+lambda)*(P_aug) + eps*eye(n);   Psl = (n+lambda)*(Pl_aug) + eps*eye(n); 
-    Ss = chol(Ps)';                         Ssl = chol(Psl)';
-    Ksi = zeros(n,2*n+1);                   Ksil = zeros(n,2*n+1);
-    Ksi(:,1) = x_aug;                       Ksil(:,1) = xl_aug;
+    Ps = (n+lambda)*(P_aug) + eps*eye(n);   
+    Ss = chol(Ps)';                         
+    Ksi = zeros(n,2*n+1);                  
+    Ksi(:,1) = x_aug;                      
     for k=1:n
         Ksi(:,k+1) = x_aug + Ss(:,k);
-        Ksi(:,k+1+n) = x_aug - Ss(:,k);    
-        
-        Ksil(:,k+1) = xl_aug + Ssl(:,k);
-        Ksil(:,k+1+n) = xl_aug - Ssl(:,k);    
+        Ksi(:,k+1+n) = x_aug - Ss(:,k);     
     end
     % passing through observation model
     Ai = zeros(dimm,2*n+1);
@@ -51,7 +44,7 @@ for i=1:dimz
         d= Ksi(dimv+1:dimv+dimf,k) - Ksi(1:dimv,k);
         r= sqrt(d(1)^2 + d(2)^2); % range
         
-        dl= Ksil(dimv+1:dimv+dimf,k) - Ksil(1:dimv,k);
+        dl= Ksi(dimv+1:dimv+dimf,k) - xvl(1:2);
         rl= sqrt(dl(1)^2 + dl(2)^2); % range
         
         Ai(:,k)= [r-rl]; % bearing  **do not use pi_to_pi here** 
@@ -99,20 +92,19 @@ den= sqrt(2*pi*det(Lt));
 num= exp(-0.5 * v' / Lt * v);
 w = num/den;
 particle.w = particle.w * w;
+particle.w = 1/5;
 
 % sample from proposal distribution
-%xvs = multivariate_gauss(xv,Pv,1); 
-%particle.xv = xvs;
-%particle.Pv= eye(2)*eps; % initialize covariance 
+xvs = multivariate_gauss(xv,Pv,1); 
+particle.xv = xvs;
+particle.Pv= eye(2)*eps; % initialize covariance 
 
-particle.xv = xv;
-particle.Pv = Pv;
+%particle.xv = xv;
+%particle.Pv = Pv;
 
 %particle.xvl = xvl; 
 %particle.Pvl = eye(2)*eps;
 
-%
-%
 
 function x= pi_to_pi(x)
 for i=1:size(x,2)

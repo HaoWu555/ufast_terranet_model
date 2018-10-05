@@ -34,10 +34,11 @@ for i=1:dimz
     for k=1:(2*n+1)
         d= Kai(1:2,k) - xv(1:2);
         dl = Kai(1:2,k) - xvl(1:2);
-        r= sqrt(d(1)^2 + d(2)^2) ; % range + noise
-        rl= sqrt(dl(1)^2 + dl(2)^2); % range + noise        
+        r= sqrt(d(1)^2 + d(2)^2);    % range + noise
+        rl= sqrt(dl(1)^2 + dl(2)^2); % range + noise 
+        dd = r-rl +Kai(3,k);
         % predictive sigma pints
-        Z(:,k)= [r-rl]; % bearing + noise  **do not use pi_to_pi here**     
+        Z(:,k)= [ dd ];    % bearing + noise  **do not use pi_to_pi here**     
     end  
     
     z_hat = 0; % predictive observation
