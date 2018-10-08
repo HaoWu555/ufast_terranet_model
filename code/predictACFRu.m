@@ -25,6 +25,7 @@ S = chol(Z)';
 
 Kaix = zeros(n,2*n+1);  % sigma point
 Kaix(:,1) = x_aug;
+
 for k=1:n
     Kaix(:,k+1) = x_aug + S(:,k);
     Kaix(:,k+1+n) = x_aug - S(:,k);    
