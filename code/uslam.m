@@ -1,6 +1,6 @@
 function data = uslam
 
-clear; close; setconfigfile; h = setup_animations(road,vtx(:,1));
+clear; close; setconfigfile; h = setup_animations(road,vtx(:,1),vtx_r);
 particles = initialize_particles(NPARTICLES,road,vtx(:,1));
 profile off;
 profile on -detail builtin
@@ -113,7 +113,7 @@ a= r*circ;
 p(2,:)= [a(2,:)+x(2) NaN];
 p(1,:)= [a(1,:)+x(1) NaN];
 
-function h= setup_animations(road,vtx)
+function h= setup_animations(road,vtx,vtx_r)
 figure;
 % axis([0 60 0 60]);
 xlabel('[m]'); ylabel('[m]');
@@ -125,6 +125,7 @@ h.cov= plot(0,0,'erasemode','xor'); % covariances of max weight particle
 h.epath= plot(0,0,'k','erasemode','xor');
 %h.xvt = plot(vtx(1,:),vtx(2,:),'+c','erasemode','background');
 h.realpath = plot(road(1,:),road(2,:),'.c','erasemode','background');
+h.vtx_r = plot(vtx_r(1,:),vtx_r(2,:),'+g')
 
 function do_plot(h, particles, plines, epath)
 xvp = [particles.xv];

@@ -18,6 +18,8 @@ load velocity.mat
 V = velocity + 0.1* randn(2,60);
 % load the virtual transmitter
 load vtx.mat 
+vtx_r = reshape(vtx(:,1),2,[]);
+vtx = vtx + 3 * randn(size(vtx));
 
 timestep = size(dist,2)-1;
 
