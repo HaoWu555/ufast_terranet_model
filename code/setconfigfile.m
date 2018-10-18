@@ -8,7 +8,9 @@ epath= [];  % estimation path
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Experiment on simple scenario
 load road.mat;
-road(:,1) = road(:,1) + randn(2,1)*1;
+% initial error vehicle position
+error_i = 5;
+road(:,1) = road(:,1) + error_i * randn(2,1)*1;
 % load the distance with vehicle and the virtual transmitter
 load dist.mat;
 D = dist;
@@ -18,8 +20,11 @@ load velocity.mat
 V = velocity + 0.1* randn(2,60);
 % load the virtual transmitter
 load vtx.mat 
-vtx_r = reshape(vtx(:,1),2,[]);
-vtx = vtx + 3 * randn(size(vtx));
+vtx_r = reshape(vtx,2,[]);
+
+% feature initial position error
+error_xfi = 5;
+vtx = vtx + error_xfi * randn(size(vtx));
 
 timestep = size(dist,2)-1;
 
@@ -37,7 +42,6 @@ sigmaR= 0.1; % [m]
 %sigmaB= (3*pi/180); % [rad]
 %Re = [sigmaR^2 0; 0 sigmaB^2];
 Re = [sigmaR^2];
-% perceplimit=30; % [m] 
 
 % resampling criteria
 NPARTICLES= 5; % number of particles(samples, hypotheses) 
